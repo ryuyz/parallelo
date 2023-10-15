@@ -152,10 +152,10 @@ fn download_infer_and_upload(video: &Video) -> Result<()> {
     std::process::Command::new("sudo")
         .args(["bash", "-lc"])
         .arg(format!(
-            "nvidia-docker run --rm -it \
+            "docker run --rm --runtime=nvidia --gpus all -it \
             -v {HOST_SHARE}:{DOCKER_SHARE} \
             -v {}:{}/ \
-            --shm-size=8g yolo \
+            --shm-size=4g yolo \
             python {DOCKER_YOLO_ROOT}/detect.py \
             --device {device} \
             --weights {DOCKER_WEIGHTS} \
