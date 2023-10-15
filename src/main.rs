@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
+const GCS_ROOT: &str = "gs://fvital-sandbox-bucket/ncchd-asd/parallelo-test";
+
 const DOCKER_SHARE: &str = "/root/share";
 const DOCKER_YOLO_ROOT: &str = "/root/share/yolov7";
 const DOCKER_WEIGHTS: &str = "/root/share/best.pt";
@@ -18,8 +20,6 @@ const DOCKER_VIDEO_DIRNAME: &str = "/root/inputs";
 
 const HOST_SHARE: &str = "/home/ryutaro_miyata_fvital_tech/yolo/share";
 const HOST_PROJECT: &str = "/home/ryutaro_miyata_fvital_tech/yolo/share/outs";
-
-const GCS_ARCHIVED: &str = "gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/archived";
 
 fn main() -> Result<()> {
     for video in list_cleaned_mp4()? {
@@ -40,16 +40,14 @@ fn download_mp4(gsuri: &str) -> Result<Abspath> {
     const DIRNAME: &str = "./inputs/";
     std::fs::create_dir_all(DIRNAME).unwrap();
 
-    let abspath = Path::new(DIRNAME)
-        .canonicalize()
-        .unwrap()
-        .join(Path::new(gsuri).file_name().unwrap());
+    let abs_dirname = Path::new(DIRNAME).canonicalize().unwrap();
+    let abspath = abs_dirname.join(Path::new(gsuri).file_name().unwrap());
 
     println!("The video will be downloaded to: {}", abspath.display());
     if !std::process::Command::new("gsutil")
         .arg("cp")
         .arg(gsuri)
-        .arg(&abspath)
+        .arg(&abs_dirname)
         .status()?
         .success()
     {
@@ -77,10 +75,7 @@ mod progress {
     use super::*;
     /// Returns the gsuri if successful
     pub(super) fn push(stem: &str) -> Result<String> {
-        let gsuri = format!(
-            "gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/inprogress/{}",
-            stem
-        );
+        let gsuri = format!("{}/yolo-outs/inprogress/{}", GCS_ROOT, stem);
         std::process::Command::new("gsutil")
             .arg("cp")
             .arg("-n")
@@ -175,6 +170,7 @@ fn download_infer_and_upload(video: &Video) -> Result<()> {
         ))
         .status()?;
 
+    std::fs::create_dir_all("./tars").unwrap();
     let tar_abspath = Path::new("./tars")
         .canonicalize()
         .unwrap()
@@ -187,20 +183,27 @@ fn download_infer_and_upload(video: &Video) -> Result<()> {
         .status()
         .unwrap();
 
+    let gcs_archived_dirname = format!("{}/yolo-outs/archived/", GCS_ROOT);
     std::process::Command::new("gsutil")
-        .args(["cp", &tar_abspath, GCS_ARCHIVED])
+        .args(["cp", &tar_abspath, &gcs_archived_dirname])
         .status()?;
 
-    Ok(())
+    if let Status::Done = fetch_status(&video.stem)? {
+        println!(
+            "{}",
+            nu_ansi_term::Color::Green.paint("Successfully uploaded")
+        );
+        Ok(())
+    } else {
+        println!("{}", nu_ansi_term::Color::Red.paint("Failed to upload"));
+        Err(anyhow::anyhow!("Failed to upload"))
+    }
 }
 
 fn fetch_status(stem: &str) -> Result<Status> {
     if std::process::Command::new("gsutil")
         .arg("stat")
-        .arg(format!(
-            "gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/archived/{}.tar",
-            stem
-        ))
+        .arg(format!("{}/yolo-outs/archived/{}.tar", GCS_ROOT, stem))
         .output()?
         .status
         .success()
@@ -209,10 +212,7 @@ fn fetch_status(stem: &str) -> Result<Status> {
     }
     if std::process::Command::new("gsutil")
         .arg("stat")
-        .arg(format!(
-            "gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/inprogress/{}",
-            stem
-        ))
+        .arg(format!("{}/yolo-outs/inprogress/{}", GCS_ROOT, stem))
         .output()?
         .status
         .success()
@@ -231,9 +231,10 @@ enum Status {
 }
 
 fn list_cleaned_mp4() -> Result<Vec<Video>> {
+    let cleaned = format!("{}/cleaned", GCS_ROOT);
     let bytes = std::process::Command::new("gsutil")
         .arg("ls")
-        .arg("gs://fvital-sandbox-bucket/ncchd-asd/cleaned/*.mp4")
+        .arg(format!("{}/*.mp4", cleaned))
         .output()?
         .stdout;
     Ok(String::from_utf8(bytes)?.lines().map(Video::new).collect())
