@@ -153,17 +153,17 @@ fn download_infer_and_upload(video: &Video) -> Result<()> {
         .args(["bash", "-lc"])
         .arg(format!(
             "docker run --rm --runtime=nvidia --gpus all -it \
-            -v {HOST_SHARE}:{DOCKER_SHARE} \
-            -v {}:{}/ \
+            -v '{HOST_SHARE}:{DOCKER_SHARE}' \
+            -v '{}:{}' \
             --shm-size=4g yolo \
-            python {DOCKER_YOLO_ROOT}/detect.py \
-            --device {device} \
-            --weights {DOCKER_WEIGHTS} \
+            python '{DOCKER_YOLO_ROOT}/detect.py' \
+            --device '{device}' \
+            --weights '{DOCKER_WEIGHTS}' \
             --conf 0.25 \
             --img-size 640 \
-            --source {} \
-            --project {DOCKER_PROJECT} \
-            --name {} \
+            --source '{}' \
+            --project '{DOCKER_PROJECT}' \
+            --name '{}' \
             --save-txt \
             --save-conf",
             abspath.host.to_string_lossy(),
