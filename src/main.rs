@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
-const GCS_ROOT: &str = "gs://fvital-sandbox-bucket/ncchd-asd/parallelo-test";
+const GCS_ROOT: &str = "gs://fvital-sandbox-bucket/ncchd-asd";
 
 const DOCKER_SHARE: &str = "/root/share";
 const DOCKER_YOLO_ROOT: &str = "/root/share/yolov7";
@@ -147,6 +147,8 @@ fn download_infer_and_upload(video: &Video) -> Result<()> {
         assert!(!host_outdir.exists())
     }
 
+    let device = std::env::var("DEVICE").unwrap_or("0".to_string());
+
     std::process::Command::new("sudo")
         .args(["bash", "-lc"])
         .arg(format!(
@@ -155,6 +157,7 @@ fn download_infer_and_upload(video: &Video) -> Result<()> {
             -v {}:{}/ \
             --shm-size=8g yolo \
             python {DOCKER_YOLO_ROOT}/detect.py \
+            --device {device} \
             --weights {DOCKER_WEIGHTS} \
             --conf 0.25 \
             --img-size 640 \
