@@ -5,7 +5,7 @@ list-tar () {
 }
 
 abspath-to-stem () {
-  gsed -r 's/(.*)\.tar/\1/'
+  sed -r 's/(.*)\.tar/\1/'
 }
 
 download-from-gsuri-and-print-local-abspath () {
@@ -47,7 +47,7 @@ extract () {
   echo STEM=${STEM} >&2
 
   local MP4_ABSPATH=$(
-    gfind ${DIR_ABSPATH} -name '*.mp4'
+    find ${DIR_ABSPATH} -name '*.mp4'
   )
   echo MP4_ABSPATH=${MP4_ABSPATH} >&2
 
@@ -57,7 +57,7 @@ extract () {
 
   local LABELS_TAR_ABSPATH=${DIR_ABSPATH}.labels.tar
 
-  gtar cvf ${LABELS_TAR_ABSPATH} -C ./tmp ${STEM}
+  tar cvf ${LABELS_TAR_ABSPATH} -C ./tmp ${STEM}
 
   rm -rf ${DIR_ABSPATH}
 
