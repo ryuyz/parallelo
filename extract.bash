@@ -1,4 +1,6 @@
-# gsutil ls 'gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/archived/*.tar' | xargs -I{} -n1 -P4 bash -c 'echo {} | bash extract.bash'
+# gsutil ls 'gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/archived/*.tar' | xargs -I{} -n1 -P8 bash -c 'echo {} | bash extract.bash'
+
+OUT_GSURI='gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/mp4-separated'
 
 abspath-to-stem () {
   sed -r 's/(.*)\.tar/\1/'
