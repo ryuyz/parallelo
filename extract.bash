@@ -1,8 +1,4 @@
-OUT_GSURI='gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/mp4-separated/'
-
-list-tar () {
-  gsutil ls 'gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/archived/*.tar'
-}
+# gsutil ls 'gs://fvital-sandbox-bucket/ncchd-asd/yolo-outs/archived/*.tar' | xargs -I{} -n1 -P4 bash -c 'echo {} | bash extract.bash'
 
 abspath-to-stem () {
   sed -r 's/(.*)\.tar/\1/'
@@ -16,13 +12,6 @@ download-from-gsuri-and-print-local-abspath () {
   mkdir -p ./tmp
   gsutil cp ${GSURI} ./tmp/${BASENAME} >&2
   realpath ./tmp/${BASENAME}
-}
-
-extract-all () {
-  local GSURI
-  while read -r GSURI; do
-    echo ${GSURI} | extract
-  done
 }
 
 # arg: gsuri
@@ -57,16 +46,14 @@ extract () {
 
   local LABELS_TAR_ABSPATH=${DIR_ABSPATH}.labels.tar
 
-  tar cvf ${LABELS_TAR_ABSPATH} -C ./tmp ${STEM}
+  tar cf ${LABELS_TAR_ABSPATH} -C ./tmp ${STEM}
 
   rm -rf ${DIR_ABSPATH}
 
   gsutil cp ${LABELS_TAR_ABSPATH} ${OUT_GSURI}
+
+  rm -f ${TAR_ABSPATH}
+  rm -rf ${LABELS_TAR_ABSPATH}
 }
 
-main () {
-  rm -rf ./tmp
-  list-tar | extract-all
-}
-
-main
+extract
