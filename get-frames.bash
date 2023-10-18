@@ -37,3 +37,4 @@ for i in $(seq 1 "${frame_count}"); do
   ffmpeg -ss ${time_str} -i ${input_file} -vframes 1 -q:v 2 $(printf ${output_pattern} ${i} ${time_str} )
 done
 
+rm -f ${input_file}
